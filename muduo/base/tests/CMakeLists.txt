@@ -3,3 +3,6 @@ target_link_libraries(mutex_test pthread rt)
 
 add_executable(condition_test Condition_test.cc)
 target_link_libraries(condition_test pthread rt)
+
+add_executable(singleton_test Singleton_test.cc)
+target_link_libraries(singleton_test pthread rt)
