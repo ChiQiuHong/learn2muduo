@@ -109,3 +109,111 @@ BOOST_AUTO_TEST_CASE(testLogStreamIntegersLimits)
     os << c;
     BOOST_CHECK_EQUAL(buf.toString(), string("000"));
 }
+
+BOOST_AUTO_TEST_CASE(testLogStreamFloats)
+{
+    muduo::LogStream os;
+    const muduo::LogStream::Buffer &buf = os.buffer();
+
+    os << 0.0;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0"));
+    os.resetBuffer();
+
+    os << 1.0;
+    BOOST_CHECK_EQUAL(buf.toString(), string("1"));
+    os.resetBuffer();
+
+    os << 0.1;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0.1"));
+    os.resetBuffer();
+
+    os << 0.05;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0.05"));
+    os.resetBuffer();
+
+    os << 0.15;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0.15"));
+    os.resetBuffer();
+
+    double a = 0.1;
+    os << a;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0.1"));
+    os.resetBuffer();
+
+    double b = 0.05;
+    os << b;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0.05"));
+    os.resetBuffer();
+
+    double c = 0.15;
+    os << c;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0.15"));
+    os.resetBuffer();
+
+    os << a + b;
+    BOOST_CHECK_EQUAL(buf.toString(), string("0.15"));
+    os.resetBuffer();
+
+    BOOST_CHECK(a + b != c);
+
+    os << 1.23456789;
+    BOOST_CHECK_EQUAL(buf.toString(), string("1.23456789"));
+    os.resetBuffer();
+
+    os << 1.234567;
+    BOOST_CHECK_EQUAL(buf.toString(), string("1.234567"));
+    os.resetBuffer();
+
+    os << -123.456;
+    BOOST_CHECK_EQUAL(buf.toString(), string("-123.456"));
+    os.resetBuffer();
+}
+
+BOOST_AUTO_TEST_CASE(testLogStreamVoid)
+{
+    muduo::LogStream os;
+    const muduo::LogStream::Buffer &buf = os.buffer();
+
+    os << static_cast<void*>(0);
+    BOOST_CHECK_EQUAL(buf.toString(), string("0x0"));
+    os.resetBuffer();
+
+    os << reinterpret_cast<void*>(8888);
+    BOOST_CHECK_EQUAL(buf.toString(), string("0x22B8"));
+    os.resetBuffer();
+}
+
+BOOST_AUTO_TEST_CASE(testLogStreamStrings)
+{
+    muduo::LogStream os;
+    const muduo::LogStream::Buffer &buf = os.buffer();
+
+    os << "Hello ";
+    BOOST_CHECK_EQUAL(buf.toString(), string("Hello "));
+    os.resetBuffer();
+
+    string chenshuo = "Shuo Chen";
+    os << chenshuo; 
+    BOOST_CHECK_EQUAL(buf.toString(), string("Shuo Chen"));
+    os.resetBuffer();
+}
+
+BOOST_AUTO_TEST_CASE(testLogStreamLong)
+{
+  muduo::LogStream os;
+  const muduo::LogStream::Buffer& buf = os.buffer();
+  for (int i = 0; i < 399; ++i)
+  {
+    os << "123456789 ";
+    BOOST_CHECK_EQUAL(buf.length(), 10*(i+1));
+    BOOST_CHECK_EQUAL(buf.avail(), 4000 - 10*(i+1));
+  }
+
+  os << "abcdefghi ";
+  BOOST_CHECK_EQUAL(buf.length(), 3990);
+  BOOST_CHECK_EQUAL(buf.avail(), 10);
+
+  os << "abcdefghi";
+  BOOST_CHECK_EQUAL(buf.length(), 3999);
+  BOOST_CHECK_EQUAL(buf.avail(), 1);
+}
