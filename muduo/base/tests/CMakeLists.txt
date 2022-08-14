@@ -1,6 +1,9 @@
 add_executable(condition_test Condition_test.cc)
 target_link_libraries(condition_test muduo_base)
 
+add_executable(logging_test Logging_test.cc)
+target_link_libraries(logging_test muduo_base)
+
 add_executable(logstream_bench LogStream_bench.cc)
 target_link_libraries(logstream_bench muduo_base boost_timer)
 

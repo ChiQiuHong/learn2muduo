@@ -1,4 +1,5 @@
 set(base_SRCS
+    Logging.cc
     LogStream.cc
     Thread.cc
     ThreadPool.cc
