@@ -52,6 +52,21 @@ namespace muduo
         int line_;
     };
 
+    void defaultOutput(const char* msg, int len)
+    {
+        size_t n = ::fwrite(msg, 1, len, stdout);
+        // FIXME check n
+        (void)n;
+    }
+
+    void defaultFlush()
+    {
+        ::fflush(stdout);
+    }
+
+    Logger::OutputFunc g_output = defaultOutput;
+    Logger::FlushFunc g_flush = defaultFlush;
+
     Logger::Logger(LogLevel level)
     {
         pImpl_.reset(new Impl(level));
@@ -61,7 +76,7 @@ namespace muduo
     {
         pImpl_->finish();
         const LogStream::Buffer &buf(stream().buffer());
-        std::cout << buf.data();
+        g_output(buf.data(), buf.length());
     }
 
     LogStream &Logger::stream()
@@ -79,6 +94,16 @@ namespace muduo
     void Logger::setLogLevel(Logger::LogLevel level)
     {
         g_logLevel = level;
+    }
+
+    void Logger::setOutput(OutputFunc out)
+    {
+        g_output = out;
+    }
+
+    void Logger::setFlush(FlushFunc flush)
+    {
+        g_flush = flush;
     }
 
 } // namespace muduo

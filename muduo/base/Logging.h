@@ -28,6 +28,11 @@ namespace muduo
         static LogLevel logLevel();
         static void setLogLevel(LogLevel level);
 
+        typedef void (*OutputFunc)(const char* msg, int len);
+        typedef void (*FlushFunc)();
+        static void setOutput(OutputFunc);
+        static void setFlush(FlushFunc);
+
     private:
         class Impl;
         std::unique_ptr<Impl> pImpl_;
