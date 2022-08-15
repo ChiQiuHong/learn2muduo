@@ -1,9 +1,14 @@
 #include "muduo/base/Logging.h"
 
 #include <iostream>
+#include <chrono>
+
+using namespace std::chrono;
 
 namespace muduo
 {
+    char t_time[64];
+    std::chrono::seconds t_lastSecond;
 
     const char *LogLevelName[Logger::NUM_LOG_LEVELS]{
         "TRACE ",
@@ -19,37 +24,61 @@ namespace muduo
     public:
         typedef Logger::LogLevel LogLevel;
 
-        Impl(LogLevel level)
-            : stream_(),
+        Impl(LogLevel level, const char* name, int line)
+            : time_(system_clock::now()),
+              stream_(),
               level_(level),
-              line_(__LINE__)
+              line_(line),
+              basename_(name)
         {
-            // FIXME time & tid
+            // FIXME tid
+            formatTime();
+            formatFileName();
             stream_ << LogLevelName[level];
         }
 
-        const char *formatFileName()
+        void formatTime()
         {
-            const char *filename = __FILE__;
-            const char *slash = strrchr(filename, '/'); // builtin function
+            auto seconds = duration_cast<std::chrono::seconds>(time_.time_since_epoch());
+            if (seconds != t_lastSecond)
+            {
+                t_lastSecond = seconds;
+                time_t time = system_clock::to_time_t(time_);
+                struct tm tm_time;
+                ::localtime_r(&time, &tm_time);
+
+                strftime(t_time, sizeof(t_time), "%Y%m%d %H:%M:%S", &tm_time);
+            }
+
+            // microseconds
+            auto us = duration_cast<microseconds>(time_.time_since_epoch()) % 1000000;
+            char buf[20];
+            snprintf(buf, sizeof(buf), ".%06ldZ ", us.count());
+            stream_ << t_time << buf;
+        }
+
+        void formatFileName()
+        {
+            const char *slash = strrchr(basename_, '/'); // builtin function
             if (slash)
             {
-                filename = slash + 1;
+                basename_ = slash + 1;
             }
-            return filename;
         }
 
         void finish()
         {
-            stream_ << " - " << formatFileName() << ":" << line_ << '\n';
+            stream_ << " - " << basename_ << ":" << line_ << '\n';
         }
 
         LogStream &stream() { return stream_; }
 
     private:
+        time_point<system_clock> time_;
         LogStream stream_;
         LogLevel level_;
         int line_;
+        const char* basename_;
     };
 
     void defaultOutput(const char* msg, int len)
@@ -67,9 +96,9 @@ namespace muduo
     Logger::OutputFunc g_output = defaultOutput;
     Logger::FlushFunc g_flush = defaultFlush;
 
-    Logger::Logger(LogLevel level)
+    Logger::Logger(const char* name, int line, LogLevel level)
     {
-        pImpl_.reset(new Impl(level));
+        pImpl_.reset(new Impl(level, name, line));
     }
 
     Logger::~Logger()

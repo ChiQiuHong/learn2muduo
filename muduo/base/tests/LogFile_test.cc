@@ -15,10 +15,11 @@ void flushFunc()
     g_logFile->flush();
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    const char *file_name = "logFile_test.log";
-    g_logFile.reset(new muduo::LogFile(file_name));
+    char name[256] = { '\0' };
+    strncpy(name, argv[0], sizeof name - 1);
+    g_logFile.reset(new muduo::LogFile(::basename(name)));
     muduo::Logger::setOutput(outputFunc);
     muduo::Logger::setFlush(flushFunc);
 

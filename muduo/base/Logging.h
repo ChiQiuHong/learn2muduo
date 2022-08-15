@@ -20,7 +20,7 @@ namespace muduo
             NUM_LOG_LEVELS,
         };
 
-        Logger(LogLevel level);
+        Logger(const char* name, int line, LogLevel level);
         ~Logger();
 
         LogStream &stream();
@@ -47,15 +47,15 @@ namespace muduo
 
 #define LOG_TRACE                                          \
     if (muduo::Logger::logLevel() <= muduo::Logger::TRACE) \
-    muduo::Logger(muduo::Logger::TRACE).stream()
+    muduo::Logger(__FILE__, __LINE__, muduo::Logger::TRACE).stream()
 #define LOG_DEBUG                                          \
     if (muduo::Logger::logLevel() <= muduo::Logger::DEBUG) \
-    muduo::Logger(muduo::Logger::DEBUG).stream()
+    muduo::Logger(__FILE__, __LINE__, muduo::Logger::DEBUG).stream()
 #define LOG_INFO                                          \
     if (muduo::Logger::logLevel() <= muduo::Logger::INFO) \
-    muduo::Logger(muduo::Logger::INFO).stream()
-#define LOG_WARN muduo::Logger(muduo::Logger::WARN).stream()
-#define LOG_ERROR muduo::Logger(muduo::Logger::ERROR).stream()
-#define LOG_FATAL muduo::Logger(muduo::Logger::FATAL).stream()
+    muduo::Logger(__FILE__, __LINE__, muduo::Logger::INFO).stream()
+#define LOG_WARN muduo::Logger(__FILE__, __LINE__, muduo::Logger::WARN).stream()
+#define LOG_ERROR muduo::Logger(__FILE__, __LINE__, muduo::Logger::ERROR).stream()
+#define LOG_FATAL muduo::Logger(__FILE__, __LINE__, muduo::Logger::FATAL).stream()
 
 } // namespace muduo
