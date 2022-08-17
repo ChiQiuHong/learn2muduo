@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 {
     char name[256] = { '\0' };
     strncpy(name, argv[0], sizeof name - 1);
-    g_logFile.reset(new muduo::LogFile(::basename(name)));
+    g_logFile.reset(new muduo::LogFile(::basename(name), 200 * 1000));
     muduo::Logger::setOutput(outputFunc);
     muduo::Logger::setFlush(flushFunc);
 
