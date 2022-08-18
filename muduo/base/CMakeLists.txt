@@ -1,4 +1,5 @@
 set(base_SRCS
+    AsyncLogging.cc
     LogFile.cc
     Logging.cc
     LogStream.cc
