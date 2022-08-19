@@ -1,5 +1,6 @@
 set(base_SRCS
-    AsyncLogging.cc
+    # AsyncLogging.cc
+    CurrentThread.cc
     LogFile.cc
     Logging.cc
     LogStream.cc

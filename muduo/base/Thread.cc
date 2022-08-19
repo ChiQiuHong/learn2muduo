@@ -1,4 +1,5 @@
 #include "muduo/base/Thread.h"
+#include "muduo/base/CurrentThread.h"
 
 #include <type_traits>
 
@@ -10,6 +11,7 @@
 #include <sys/types.h>
 #include <linux/unistd.h>
 #include <assert.h>
+#include <exception>
 
 #include <thread>
 
@@ -22,6 +24,27 @@ namespace muduo
         {
             return static_cast<pid_t>(::syscall(SYS_gettid));
         }
+
+        void afterFork()
+        {
+            muduo::CurrentThread::t_cachedTid = 0;
+            muduo::CurrentThread::t_threadName = "main";
+            CurrentThread::tid();
+            // no need to call  pthread_atfork(NULL, NULL, &afterFork);
+        }
+
+        class ThreadNameInitializer
+        {
+        public:
+            ThreadNameInitializer()
+            {
+                muduo::CurrentThread::t_threadName = "main";
+                CurrentThread::tid();
+                pthread_atfork(NULL, NULL, &afterFork);
+            }
+        };
+
+        ThreadNameInitializer init;
 
         struct ThreadData
         {
@@ -41,10 +64,30 @@ namespace muduo
 
             void runInThread()
             {
-                *tid_ = detail::gettid();
-                printf("run in thread tid=%d\n", *tid_);    // FIXME
+                *tid_ = muduo::CurrentThread::tid();
                 tid_ = NULL;
-                func_();
+
+                muduo::CurrentThread::t_threadName = name_.empty() ? "muduoThread" : name_.c_str();
+                ::prctl(PR_SET_NAME, muduo::CurrentThread::t_threadName);   // 给线程命名
+
+                try
+                {
+                    func_();
+                    muduo::CurrentThread::t_threadName = "finished";
+                }
+                catch(const std::exception& e)
+                {
+                    muduo::CurrentThread::t_threadName = "crashed";
+                    fprintf(stderr, "exception caught in Thread %s\n", name_.c_str());
+                    fprintf(stderr, "reason: %s\n", e.what());
+                    abort();
+                }
+                catch (...)
+                {
+                    muduo::CurrentThread::t_threadName = "crashed";
+                    fprintf(stderr, "unknown exception caught in Thread %s\n", name_.c_str());
+                    throw;  // rethrow
+                }
             }
         };
 
@@ -58,14 +101,37 @@ namespace muduo
 
     } // namespace detail
 
+    void CurrentThread::cacheTid()
+    {
+        if (t_cachedTid == 0)
+        {
+            t_cachedTid = detail::gettid();
+            t_tidStringLength = snprintf(t_tidString, sizeof(t_tidString), "%5d ", t_cachedTid);
+        }
+    }
+
+    bool CurrentThread::isMainThread()
+    {
+        return tid() == ::getpid();
+    }
+
+    void CurrentThread::sleepUsec(int64_t usec)
+    {
+        struct timespec ts = { 0, 0 };
+        ts.tv_sec = static_cast<time_t>(usec / 1000000);
+        ts.tv_nsec = static_cast<long>(usec % 1000000 * 1000);
+        ::nanosleep(&ts, NULL);
+    }
+
+    int Thread::numCreated_ = 0;
+
     Thread::Thread(ThreadFunc func, const std::string &n)
         : started_(false),
           joined_(false),
           pthreadId_(0),
           tid_(0),
           func_(std::move(func)),
-          name_(n),
-          numCreated_(0)
+          name_(n)
     {
         setDefaultName();
     }
@@ -80,7 +146,7 @@ namespace muduo
 
     void Thread::setDefaultName()
     {
-        int num = numCreated_ + 1;
+        int num = ++numCreated_;
         if (name_.empty())
         {
             char buf[32];
@@ -100,6 +166,11 @@ namespace muduo
             started_ = false;
             delete data; // or no delete?
             printf("Failed in pthread_create");
+        }
+        else
+        {
+            // TODO latch_
+            // assert(tid_ > 0);
         }
     }
 

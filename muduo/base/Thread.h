@@ -26,7 +26,7 @@ namespace muduo
         pid_t tid() const { return tid_; }
         const std::string& name() const { return name_; }
 
-        int numCreated() { return numCreated_; }
+        static int numCreated() { return numCreated_; }
     
     private:
         void setDefaultName();
@@ -37,7 +37,7 @@ namespace muduo
         pid_t tid_;
         ThreadFunc func_;
         std::string name_;
-        int numCreated_;
+        static int numCreated_;
     };
 
 }   // namespace muduo

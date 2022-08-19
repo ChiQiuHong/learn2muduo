@@ -1,24 +1,30 @@
 #include "muduo/base/Thread.h"
+#include "muduo/base/CurrentThread.h"
 
 #include <string>
-#include <iostream>
-#include <thread>
-
+#include <stdio.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/syscall.h>
 
-using namespace std;
-using namespace muduo;
+void mysleep(int seconds)
+{
+    timespec t = { seconds, 0 };
+    ::nanosleep(&t, NULL);
+}
 
 void threadFunc()
 {
-    cout << "tid=" << this_thread::get_id() << endl;
+    printf("tid=%d\n", muduo::CurrentThread::tid());
 }
 
 void threadFunc2(int x)
 {
-    cout << "tid=" << this_thread::get_id() << ", x=" << x << endl;
+    printf("tid=%d, x=%d\n", muduo::CurrentThread::tid(), x);
+}
+
+void threadFunc3()
+{
+    printf("tid=%d\n", muduo::CurrentThread::tid());
+    mysleep(1);
 }
 
 class Foo
@@ -28,10 +34,15 @@ public:
         : x_(x)
     {
     }
-    
+
     void memberFunc()
     {
-        cout << "tid=" << this_thread::get_id() << ", Foo::x=" << x_ << endl;
+        printf("tid=%d, Foo::x=%f\n", muduo::CurrentThread::tid(), x_);
+    }
+
+    void memberFunc2(const std::string& text)
+    {
+        printf("tid=%d, Foo::x_=%f, text=%s\n", muduo::CurrentThread::tid(), x_, text.c_str());
     }
 
 private:
@@ -40,20 +51,17 @@ private:
 
 int main()
 {
-    cout << "pid=" << getpid() << ", "
-         << "std::thread tid=" << this_thread::get_id() << ", "
-         << "syscall tid=" << syscall(SYS_gettid) << endl;
+    printf("pid=%d, tid=%d\n", ::getpid(), muduo::CurrentThread::tid());
 
     muduo::Thread t1(threadFunc);
     t1.start();
-    cout << "t1.tid=" << t1.tid() << endl;
+    printf("t1.tid=%d", t1.tid());
     t1.join();
 
     muduo::Thread t2(std::bind(threadFunc2, 42),
                      "thread for free function with argument");
     t2.start();
-    cout << "t1.tid=" << t1.tid() << endl;
-    cout << "t2.tid=" << t2.tid() << endl;
+    printf("t2.tid=%d", t2.tid());
     t2.join();
 
     Foo foo(87.53);
@@ -61,4 +69,23 @@ int main()
                      "thread for member function without argument");
     t3.start();
     t3.join();
+
+    muduo::Thread t4(std::bind(&Foo::memberFunc2, std::ref(foo), std::string("Shuo Chen")));
+    t4.start();
+    t4.join();
+
+    {
+        muduo::Thread t5(threadFunc3);
+        t5.start();
+        // t5 may destruct eariler than thread creation.
+    }
+    mysleep(2);
+    {
+        muduo::Thread t6(threadFunc3);
+        t6.start();
+        mysleep(2);
+        // t6 destruct later than thread creation.
+    }
+    sleep(2);
+    printf("number of created threads %d\n", muduo::Thread::numCreated());
 }
