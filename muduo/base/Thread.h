@@ -1,6 +1,6 @@
 #pragma once
 
-#include "muduo/base/noncopyable.h"
+#include "muduo/base/CountDownLatch.h"
 
 #include <functional>
 #include <memory>
@@ -37,6 +37,8 @@ namespace muduo
         pid_t tid_;
         ThreadFunc func_;
         std::string name_;
+        CountDownLatch latch_;
+
         static int numCreated_;
     };
 
