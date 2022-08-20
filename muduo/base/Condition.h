@@ -17,32 +17,35 @@ namespace muduo
         explicit Condition(MutexLock &mutex)
             : mutex_(mutex)
         {
-            pthread_cond_init(&cond_, NULL);
+            MCHECK(pthread_cond_init(&pcond_, NULL));
         }
 
         ~Condition()
         {
-            pthread_cond_destroy(&cond_);
+            MCHECK(pthread_cond_destroy(&pcond_));
         }
 
         void wait()
         {
-            pthread_mutex_t* lock = mutex_.getPthreadMutex();
-            pthread_cond_wait(&cond_, lock);
+            MutexLock::UnassignGuard ug(mutex_);
+            pthread_cond_wait(&pcond_, mutex_.getPthreadMutex());
         }
+
+        // returns true if time out, false otherwise.
+        bool waitForSeconds(double seconds);
 
         void notify()
         {
-            pthread_cond_signal(&cond_);
+            MCHECK(pthread_cond_signal(&pcond_));
         }
 
         void notifyAll()
         {
-            pthread_cond_broadcast(&cond_);
+            MCHECK(pthread_cond_broadcast(&pcond_));
         }
 
     private:
-        pthread_cond_t cond_;
         MutexLock &mutex_;
+        pthread_cond_t pcond_;
     };
 } // namespace muduo

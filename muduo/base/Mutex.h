@@ -1,5 +1,6 @@
 #pragma once
 
+#include "muduo/base/CurrentThread.h"
 #include "muduo/base/noncopyable.h"
 #include <assert.h>
 #include <pthread.h>
@@ -8,6 +9,10 @@
 // 主要有以下几个函数
 // pthread_mutex_init() pthread_mutex_lock() pthread_mutex_unlock() phtread_mutex_destroy()
 
+// CHECK_PTHREAD_RETURN_VALUE
+#define MCHECK(ret) ({ __typeof__ (ret) errnum = (ret);  \
+                       assert(errnum == 0); (void) errnum; })
+
 namespace muduo
 {
     // 互斥锁类
@@ -15,48 +20,90 @@ namespace muduo
     {
     public:
         MutexLock()
-            : isLocked_(false)
+            : holder_(0)
         {
-            pthread_mutex_init(&mutex_, NULL);
+            MCHECK(pthread_mutexattr_init(&mutex_attr_));
+            MCHECK(pthread_mutexattr_settype(&mutex_attr_, PTHREAD_MUTEX_NORMAL));
+            MCHECK(pthread_mutex_init(&mutex_, &mutex_attr_));
         }
 
         ~MutexLock()
         {
             // 判断是否已经解锁
-            assert(!isLocking());
-            pthread_mutex_destroy(&mutex_);
+            assert(holder_ == 0);
+            MCHECK(pthread_mutex_destroy(&mutex_));
+            MCHECK(pthread_mutexattr_destroy(&mutex_attr_));
+        }
+
+        bool isLockedByThisThread() const
+        {
+            return holder_ == CurrentThread::tid();
+        }
+
+        void assertLocked() const
+        {
+            assert(isLockedByThisThread());
         }
 
         // 上锁
         void lock()
         {
-            isLocked_ = true;
-            pthread_mutex_lock(&mutex_);
+            MCHECK(pthread_mutex_lock(&mutex_));
+            assignHolder();
         }
 
         // 释放锁
         void unlock()
         {
-            isLocked_ = false;
-            pthread_mutex_unlock(&mutex_);
+            unassignHolder();
+            MCHECK(pthread_mutex_unlock(&mutex_));
         }
 
-        bool isLocking() const { return isLocked_; } // 判断锁的状态
-
-        pthread_mutex_t* getPthreadMutex()
+        pthread_mutex_t *getPthreadMutex() // for Condition
         {
             return &mutex_;
         }
 
     private:
+        friend class Condition;
+
+        class UnassignGuard : noncopyable
+        {
+        public:
+            explicit UnassignGuard(MutexLock &owner)
+                : owner_(owner)
+            {
+                owner_.unassignHolder();
+            }
+
+            ~UnassignGuard()
+            {
+                owner_.assignHolder();
+            }
+
+        private:
+            MutexLock &owner_;
+        };
+
+        void unassignHolder()
+        {
+            holder_ = 0;
+        }
+
+        void assignHolder()
+        {
+            holder_ = CurrentThread::tid();
+        }
+
         pthread_mutex_t mutex_;
-        bool isLocked_; // 标记是否上锁
+        pthread_mutexattr_t mutex_attr_;
+        pid_t holder_;
     };
 
     class MutexLockGuard : noncopyable
     {
     public:
-        explicit MutexLockGuard(MutexLock& mutex)
+        explicit MutexLockGuard(MutexLock &mutex)
             : mutex_(mutex)
         {
             mutex_.lock();
@@ -68,7 +115,7 @@ namespace muduo
         }
 
     private:
-        MutexLock& mutex_;
+        MutexLock &mutex_;
     };
 
 // 定义一个宏，防止产生临时对象，没有锁住临界区
