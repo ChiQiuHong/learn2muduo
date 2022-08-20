@@ -128,7 +128,7 @@ namespace muduo
         ::nanosleep(&ts, NULL);
     }
 
-    int Thread::numCreated_ = 0;
+    AtomicInt32 Thread::numCreated_;
 
     Thread::Thread(ThreadFunc func, const std::string &n)
         : started_(false),
@@ -152,7 +152,7 @@ namespace muduo
 
     void Thread::setDefaultName()
     {
-        int num = ++numCreated_;
+        int num = numCreated_.incrementAndGet();
         if (name_.empty())
         {
             char buf[32];

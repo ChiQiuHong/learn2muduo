@@ -1,5 +1,6 @@
 #pragma once
 
+#include "muduo/base/Atomic.h"
 #include "muduo/base/CountDownLatch.h"
 
 #include <functional>
@@ -26,7 +27,7 @@ namespace muduo
         pid_t tid() const { return tid_; }
         const std::string& name() const { return name_; }
 
-        static int numCreated() { return numCreated_; }
+        static int numCreated() { return numCreated_.get(); }
     
     private:
         void setDefaultName();
@@ -39,7 +40,7 @@ namespace muduo
         std::string name_;
         CountDownLatch latch_;
 
-        static int numCreated_;
+        static AtomicInt32 numCreated_;
     };
 
 }   // namespace muduo
