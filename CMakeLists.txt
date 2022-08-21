@@ -10,7 +10,7 @@ endif()
 
 # only build examples if this is the main project
 if(CMAKE_PROJECT_NAME STREQUAL "muduo")
-  option(MYSERVER_BUILD_EXAMPLES "Build Muduo examples" ON)
+  option(MUDUO_BUILD_EXAMPLES "Build Muduo examples" ON)
 endif()
 
 set(CXX_FLAGS
@@ -104,9 +104,7 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
 message(STATUS "CXX_FLAGS = " ${CMAKE_CXX_FLAGS} " " ${CMAKE_CXX_FLAGS_${BUILD_TYPE}})
 
 add_subdirectory(muduo/base)
-# add_subdirectory(muduo/net)
-
-set(MUDUO_BUILD_EXAMPLES ON)
+add_subdirectory(muduo/net)
 
 if(MUDUO_BUILD_EXAMPLES)
 #   add_subdirectory(contrib)
