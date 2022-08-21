@@ -55,10 +55,10 @@ uint16_t IPv4Address::port() const
     return be16toh(portNetEndian());
 }
 
-// const struct sockaddr *IPv4Address::getSockAddr() const
-// {
-//     return reinterpret_cast<struct sockaddr*>(static_cast<void*>(&addr_));
-// }
+const struct sockaddr *IPv4Address::getSockAddr() const
+{
+    return reinterpret_cast<const sockaddr*>(&addr_);
+}
 
 uint32_t IPv4Address::ipnetEndian() const
 {

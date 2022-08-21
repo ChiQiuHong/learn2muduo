@@ -1,5 +1,6 @@
 set(net_SRCS
     Address.cc
+    Socket.cc
 )
 
 add_library(muduo_net ${net_SRCS})
@@ -13,7 +14,6 @@ set(HEADERS
 
 install(FILES ${HEADERS} DESTINATION include/muduo/net)
 
-add_subdirectory(tests)
-# if(MUDUO_BUILD_EXAMPLES)
-#     add_subdirectory(tests)
-# endif()
+if(MUDUO_BUILD_EXAMPLES)
+    add_subdirectory(tests)
+endif()

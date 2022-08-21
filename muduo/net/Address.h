@@ -42,7 +42,7 @@ namespace muduo
             std::string toIpPort() const override;
             uint16_t port() const override;
 
-            // const struct sockaddr *getSockAddr() const;
+            const struct sockaddr *getSockAddr() const;
             void setSockAddrInet(const struct sockaddr_in &addr) { addr_ = addr; }
 
             uint32_t ipnetEndian() const override;
