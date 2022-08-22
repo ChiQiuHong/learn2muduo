@@ -9,17 +9,22 @@
 using namespace muduo;
 using namespace muduo::net;
 
+void Read(int connfd, const IPv4Address& peerAddr)
+{
+    char message[1024];
+    ::read(connfd, message, sizeof(message) - 1);
+    printf("Message from client: %s : %s\n", peerAddr.toIpPort().c_str(), message);
+}
+
 void DiscardServer() {
 
-    IPv4Address serv_addr(2031, true);
+    IPv4Address serv_addr(2020, true);
 
     Acceptor server(serv_addr, true);
+    server.setNewConnectionCallback(Read);
     printf("this is server: %s\n", serv_addr.toIpPort().c_str());
     server.listen();
-    
-    char message[1024];
-    server.handleRead(message);
-    printf("Message from client: %s \n", message);
+    server.handleRead();
 }
 
 int main()

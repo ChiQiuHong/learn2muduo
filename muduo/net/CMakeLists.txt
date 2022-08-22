@@ -13,6 +13,7 @@ install(TARGETS muduo_net DESTINATION lib)
 
 set(HEADERS
     Address.h
+    Callbacks.h
     TcpConnection.h
     TcpServer.h
 )

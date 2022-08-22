@@ -10,8 +10,5 @@ endif()
 add_executable(socket_test Socket_test.cc)
 target_link_libraries(socket_test muduo_net)
 
-add_executable(tcpconnection_test TcpConnection_test.cc)
-target_link_libraries(tcpconnection_test muduo_net)
-
 add_executable(tcpserver_test TcpServer_test.cc)
 target_link_libraries(tcpserver_test muduo_net)

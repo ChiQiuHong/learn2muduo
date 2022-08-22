@@ -7,17 +7,22 @@
 using namespace muduo;
 using namespace muduo::net;
 
-void DiscardServer() {
+void onMessage(const TcpConnectionPtr &conn)
+{
+    char message[1024];
+    ::read(conn->fd(), message, sizeof(message) - 1);
+    printf("Message from client: %s: %s \n", conn->peerAddress().toIpPort().c_str(), message);
+}
 
-    IPv4Address serv_addr(2032, true);
+void DiscardServer()
+{
+
+    IPv4Address serv_addr(2030, true);
 
     TcpServer server(serv_addr, "DiscardServer");
-    printf("this is server: %s\n", serv_addr.toIpPort().c_str());
+    server.setMessageCallback(onMessage);
     server.start();
-    
-    char message[1024];
-    server.handleRead(message);
-    printf("Message from client: %s \n", message);
+    server.handleRead();
 }
 
 int main()

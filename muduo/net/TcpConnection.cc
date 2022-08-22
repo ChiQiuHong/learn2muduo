@@ -8,18 +8,31 @@
 using namespace muduo;
 using namespace muduo::net;
 
-TcpConnection::TcpConnection(int sockfd)
-    : socket_(sockfd)
+TcpConnection::TcpConnection(const std::string &nameArg,
+                             int sockfd,
+                             const IPv4Address &localAddr,
+                             const IPv4Address &peerAddr)
+    : name_(nameArg),
+      socket_(new Socket(sockfd)),
+      localAddr_(localAddr),
+      peerAddr_(peerAddr)
 {
-
+    LOG_DEBUG << "TcpConnection::ctor[" << name_.c_str() << "] at "
+              << this << " fd=" << sockfd;
 }
 
 TcpConnection::~TcpConnection()
 {
-    
+    LOG_DEBUG << "TcpConnection::dtor[" << name_.c_str() << "] at " << this
+              << " fd=" << socket_->fd();
 }
 
-void TcpConnection::handleRead(char* buf)
+int TcpConnection::fd() const
 {
-    ::read(socket_.fd(), buf, sizeof(buf) - 1);
+    return socket_->fd();
+}
+
+void TcpConnection::handleRead()
+{
+    messageCallback_(shared_from_this());
 }

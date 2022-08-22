@@ -11,7 +11,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-Acceptor::Acceptor(const IPv4Address& listenAddr, bool reuseport)
+Acceptor::Acceptor(const IPv4Address &listenAddr, bool reuseport)
     : acceptSocket_(::socket(listenAddr.family(), SOCK_STREAM, IPPROTO_TCP))
 {
     acceptSocket_.setReuseAddr(true);
@@ -21,7 +21,6 @@ Acceptor::Acceptor(const IPv4Address& listenAddr, bool reuseport)
 
 Acceptor::~Acceptor()
 {
-
 }
 
 void Acceptor::listen()
@@ -29,14 +28,17 @@ void Acceptor::listen()
     acceptSocket_.listen();
 }
 
-void Acceptor::handleRead(char* buf)
+void Acceptor::handleRead()
 {
     IPv4Address peeraddr;
 
     int connfd = acceptSocket_.accept(&peeraddr);
     if (connfd >= 0)
     {
-        ::read(connfd, buf, sizeof(buf) - 1);
+        if (newConnectionCallback_)
+        {
+            newConnectionCallback_(connfd, peeraddr);
+        }
     }
     else
     {
@@ -45,6 +47,5 @@ void Acceptor::handleRead(char* buf)
         {
             LOG_ERROR << "errno EMFILE";
         }
-        
     }
 }
