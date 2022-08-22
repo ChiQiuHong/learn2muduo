@@ -1,6 +1,7 @@
 set(net_SRCS
     Address.cc
     Socket.cc
+    TcpConnection.cc
 )
 
 add_library(muduo_net ${net_SRCS})
@@ -10,6 +11,7 @@ install(TARGETS muduo_net DESTINATION lib)
 
 set(HEADERS
     Address.h
+    TcpConnection.h
 )
 
 install(FILES ${HEADERS} DESTINATION include/muduo/net)
