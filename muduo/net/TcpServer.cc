@@ -2,16 +2,23 @@
 
 #include "muduo/base/Logging.h"
 #include "muduo/net/Acceptor.h"
+#include "muduo/net/EPoller.h"
 
 using namespace muduo;
 using namespace muduo::net;
+
+namespace
+{
+    const int kEPollTimeMs = 10000;
+}
 
 TcpServer::TcpServer(const IPv4Address &listenAddr,
                      const std::string &nameArg)
     : ipPort_(listenAddr.toIpPort()),
       name_(nameArg),
       acceptor_(new Acceptor(listenAddr, true)),
-      nextConnId_(1)
+      nextConnId_(1),
+      epoller_(new EPoller())
 {
     acceptor_->setNewConnectionCallback(
         std::bind(&TcpServer::newConnection, this, std::placeholders::_1, std::placeholders::_2));
@@ -25,13 +32,20 @@ TcpServer::~TcpServer()
 void TcpServer::start()
 {
     acceptor_->listen();
-}
+    // 注册可读事件
+    epoller_->updataChannel(acceptor_->getChannel());
 
-void TcpServer::handleRead()
-{
-    // FIXME 应该交由Channel通知
-    acceptor_->handleRead();
-    connections_["DiscardServer-127.0.0.1:2030#1"]->handleRead();
+    std::vector<Channel*> activeChannels;
+    while (1)
+    {
+        activeChannels.clear();
+        epoller_->epoll(kEPollTimeMs, &activeChannels);
+
+        for (Channel* channel : activeChannels)
+        {
+            channel->handleEvent();
+        }
+    }
 }
 
 void TcpServer::newConnection(int sockfd, const IPv4Address &peerAddr)
@@ -56,4 +70,6 @@ void TcpServer::newConnection(int sockfd, const IPv4Address &peerAddr)
 
     connections_[connName] = conn;
     conn->setMessageCallback(messageCallback_);
+    conn->connectEstablished();
+    epoller_->updataChannel(conn->getChannel());
 }

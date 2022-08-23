@@ -1,5 +1,6 @@
 #pragma once
 
+#include "muduo/net/Channel.h"
 #include "muduo/net/Socket.h"
 
 #include <functional>
@@ -30,8 +31,11 @@ namespace muduo
             void listen();
             void handleRead();
 
+            Channel* getChannel()  {return &acceptChannel_;}
+
         private:
             Socket acceptSocket_;
+            Channel acceptChannel_;
             NewConnectionCallback newConnectionCallback_;
         };
         

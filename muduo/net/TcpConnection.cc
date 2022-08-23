@@ -1,6 +1,7 @@
 #include "muduo/net/TcpConnection.h"
 
 #include "muduo/base/Logging.h"
+#include "muduo/net/Channel.h"
 #include "muduo/net/Socket.h"
 
 #include <unistd.h>
@@ -14,9 +15,12 @@ TcpConnection::TcpConnection(const std::string &nameArg,
                              const IPv4Address &peerAddr)
     : name_(nameArg),
       socket_(new Socket(sockfd)),
+      channel_(new Channel(sockfd)),
       localAddr_(localAddr),
       peerAddr_(peerAddr)
 {
+    channel_->setReadCallback(
+        std::bind(&TcpConnection::handleRead, this));
     LOG_DEBUG << "TcpConnection::ctor[" << name_.c_str() << "] at "
               << this << " fd=" << sockfd;
 }
@@ -35,4 +39,9 @@ int TcpConnection::fd() const
 void TcpConnection::handleRead()
 {
     messageCallback_(shared_from_this());
+}
+
+void TcpConnection::connectEstablished()
+{
+    channel_->enableReading();
 }

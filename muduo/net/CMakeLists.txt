@@ -1,6 +1,8 @@
 set(net_SRCS
     Acceptor.cc
     Address.cc
+    Channel.cc
+    EPoller.cc
     Socket.cc
     TcpConnection.cc
     TcpServer.cc
@@ -14,6 +16,7 @@ install(TARGETS muduo_net DESTINATION lib)
 set(HEADERS
     Address.h
     Callbacks.h
+    Channel.h
     TcpConnection.h
     TcpServer.h
 )

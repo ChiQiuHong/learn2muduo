@@ -17,12 +17,11 @@ void onMessage(const TcpConnectionPtr &conn)
 void DiscardServer()
 {
 
-    IPv4Address serv_addr(2030, true);
+    IPv4Address serv_addr(2031, true);
 
     TcpServer server(serv_addr, "DiscardServer");
     server.setMessageCallback(onMessage);
     server.start();
-    server.handleRead();
 }
 
 int main()

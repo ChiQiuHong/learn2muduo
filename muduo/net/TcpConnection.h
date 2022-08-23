@@ -18,6 +18,7 @@ namespace muduo
 {
     namespace net
     {
+        class Channel;
         class Socket;
 
         ///
@@ -44,10 +45,15 @@ namespace muduo
 
             void handleRead();
 
+            void connectEstablished();
+
+            Channel* getChannel() { return &*channel_;}
+
         private:
 
             const std::string name_;
             std::unique_ptr<Socket> socket_;
+            std::unique_ptr<Channel> channel_;
             const IPv4Address localAddr_;
             const IPv4Address peerAddr_;
             MessageCallback messageCallback_;

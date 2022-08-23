@@ -16,6 +16,7 @@ namespace muduo
     {
 
         class Acceptor;
+        class EPoller;
 
         ///
         /// TCP server, supports single-threaded and thread-pool models.
@@ -48,6 +49,8 @@ namespace muduo
             MessageCallback messageCallback_;
             int nextConnId_;
             ConnectionMap connections_;
+            
+            std::unique_ptr<EPoller> epoller_;
         };
 
     } // namespace net

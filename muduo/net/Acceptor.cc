@@ -12,11 +12,14 @@ using namespace muduo;
 using namespace muduo::net;
 
 Acceptor::Acceptor(const IPv4Address &listenAddr, bool reuseport)
-    : acceptSocket_(::socket(listenAddr.family(), SOCK_STREAM, IPPROTO_TCP))
+    : acceptSocket_(::socket(listenAddr.family(), SOCK_STREAM, IPPROTO_TCP)),
+      acceptChannel_(acceptSocket_.fd())
 {
     acceptSocket_.setReuseAddr(true);
     acceptSocket_.setReusePort(reuseport);
     acceptSocket_.bindAddress(listenAddr);
+    acceptChannel_.setReadCallback(
+        std::bind(&Acceptor::handleRead, this));
 }
 
 Acceptor::~Acceptor()
@@ -26,6 +29,7 @@ Acceptor::~Acceptor()
 void Acceptor::listen()
 {
     acceptSocket_.listen();
+    acceptChannel_.enableReading();
 }
 
 void Acceptor::handleRead()
