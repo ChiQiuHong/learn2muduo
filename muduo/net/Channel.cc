@@ -1,6 +1,7 @@
 #include "muduo/net/Channel.h"
 
 #include "muduo/base/Logging.h"
+#include "muduo/net/EventLoop.h"
 
 #include <sys/epoll.h>
 
@@ -11,8 +12,9 @@ const int Channel::kNoneEvent = 0;
 const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
 const int Channel::kWriteEvent = EPOLLOUT;
 
-Channel::Channel(int fd__)
-    : fd_(fd__),
+Channel::Channel(EventLoop* loop, int fd__)
+    : loop_(loop),
+      fd_(fd__),
       revents_(0)
 {
 }
@@ -34,7 +36,7 @@ void Channel::handleEvent()
     }
 }
 
-// void Channel::update()
-// {
-
-// }
+void Channel::update()
+{
+    loop_->updateChannel(this);
+}

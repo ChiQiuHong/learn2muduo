@@ -9,13 +9,30 @@
 using namespace muduo;
 using namespace muduo::net;
 
-TcpConnection::TcpConnection(const std::string &nameArg,
+void muduo::net::defaultConnectionCallback(const TcpConnectionPtr &conn)
+{
+    LOG_TRACE << conn->localAddress().toIpPort() << " -> "
+              << conn->peerAddress().toIpPort() << " is "
+              << (conn->connected() ? "UP" : "DOWN");
+}
+
+void muduo::net::defaultMessageCallback(const TcpConnectionPtr &conn)
+{
+    char message[1024];
+    ::read(conn->fd(), message, sizeof(message) - 1);
+    printf("Message from client: %s: %s \n", conn->peerAddress().toIpPort().c_str(), message);
+}
+
+TcpConnection::TcpConnection(EventLoop *loop,
+                             const std::string &nameArg,
                              int sockfd,
                              const IPv4Address &localAddr,
                              const IPv4Address &peerAddr)
-    : name_(nameArg),
+    : loop_(loop),
+      name_(nameArg),
+      state_(kConnecting),
       socket_(new Socket(sockfd)),
-      channel_(new Channel(sockfd)),
+      channel_(new Channel(loop, sockfd)),
       localAddr_(localAddr),
       peerAddr_(peerAddr)
 {
@@ -31,9 +48,10 @@ TcpConnection::~TcpConnection()
               << " fd=" << socket_->fd();
 }
 
-int TcpConnection::fd() const
+void TcpConnection::connectEstablished()
 {
-    return socket_->fd();
+    channel_->enableReading();
+    connectionCallback_(shared_from_this());
 }
 
 void TcpConnection::handleRead()
@@ -41,7 +59,7 @@ void TcpConnection::handleRead()
     messageCallback_(shared_from_this());
 }
 
-void TcpConnection::connectEstablished()
+int TcpConnection::fd() const
 {
-    channel_->enableReading();
+    return socket_->fd();
 }

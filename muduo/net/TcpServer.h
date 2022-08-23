@@ -16,7 +16,7 @@ namespace muduo
     {
 
         class Acceptor;
-        class EPoller;
+        class EventLoop;
 
         ///
         /// TCP server, supports single-threaded and thread-pool models.
@@ -25,32 +25,42 @@ namespace muduo
         class TcpServer : noncopyable
         {
         public:
-            TcpServer(const IPv4Address &listenAddr,
-                      const std::string &nameArg);
+
+            enum Option { kNoReusePort, kReusePort };
+
+            TcpServer(EventLoop* loop,
+                      const IPv4Address &listenAddr,
+                      const std::string &nameArg,
+                      Option option = kNoReusePort);
             ~TcpServer();
+
+            EventLoop* getLoop() const { return loop_; }
+
+            void start();
+            
+            void setConnectionCallback(const ConnectionCallback& cb)
+            {
+                connectionCallback_ = cb;
+            }
 
             void setMessageCallback(const MessageCallback& cb)
             {
                 messageCallback_ = cb;
             }
 
-            void start();
-
-            void handleRead();
-
         private:
             void newConnection(int sockfd, const IPv4Address &peerAddr);
 
             typedef std::map<std::string, TcpConnectionPtr> ConnectionMap;
 
+            EventLoop* loop_;
             const std::string ipPort_;
             const std::string name_;
             std::unique_ptr<Acceptor> acceptor_;
+            ConnectionCallback connectionCallback_;
             MessageCallback messageCallback_;
             int nextConnId_;
             ConnectionMap connections_;
-            
-            std::unique_ptr<EPoller> epoller_;
         };
 
     } // namespace net

@@ -3,6 +3,7 @@ set(net_SRCS
     Address.cc
     Channel.cc
     EPoller.cc
+    EventLoop.cc
     Socket.cc
     TcpConnection.cc
     TcpServer.cc
@@ -17,6 +18,7 @@ set(HEADERS
     Address.h
     Callbacks.h
     Channel.h
+    EventLoop.h
     TcpConnection.h
     TcpServer.h
 )

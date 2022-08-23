@@ -19,6 +19,7 @@ namespace muduo
     namespace net
     {
         class Channel;
+        class EventLoop;
         class Socket;
 
         ///
@@ -29,33 +30,43 @@ namespace muduo
                               public std::enable_shared_from_this<TcpConnection>
         {
         public:
-            TcpConnection(const std::string &name,
+            TcpConnection(EventLoop* loop,
+                          const std::string &name,
                           int sockfd,
                           const IPv4Address &localAddr,
                           const IPv4Address &peerAddr);
             ~TcpConnection();
 
+            const IPv4Address& localAddress() const { return localAddr_; }
             const IPv4Address& peerAddress() const { return peerAddr_; }
-            int fd() const;
+            bool connected() const { return state_ == kConnected; }
+
+            void setConnectionCallback(const ConnectionCallback& cb)
+            {
+                connectionCallback_ = cb;
+            }
 
             void setMessageCallback(const MessageCallback &cb)
             {
                 messageCallback_ = cb;
             }
 
-            void handleRead();
-
             void connectEstablished();
 
-            Channel* getChannel() { return &*channel_;}
+            int fd() const;
 
         private:
+            enum StateE { kDisconnected, kConnecting, kConnected, kDisconnecting };
+            void handleRead();
 
+            EventLoop* loop_;
             const std::string name_;
+            StateE state_;
             std::unique_ptr<Socket> socket_;
             std::unique_ptr<Channel> channel_;
             const IPv4Address localAddr_;
             const IPv4Address peerAddr_;
+            ConnectionCallback connectionCallback_;
             MessageCallback messageCallback_;
         };
 

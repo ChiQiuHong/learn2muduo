@@ -1,11 +1,19 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/base/Logging.h"
+#include "muduo/net/EventLoop.h"
 
 #include <string.h>
 #include <unistd.h>
 
 using namespace muduo;
 using namespace muduo::net;
+
+void onConnection(const TcpConnectionPtr& conn)
+{
+    LOG_INFO << "DiscardServer - " << conn->peerAddress().toIpPort().c_str() << " -> "
+             << conn->localAddress().toIpPort().c_str() << " is "
+             << (conn->connected() ? "UP" : "DOWN");
+}
 
 void onMessage(const TcpConnectionPtr &conn)
 {
@@ -17,11 +25,14 @@ void onMessage(const TcpConnectionPtr &conn)
 void DiscardServer()
 {
 
-    IPv4Address serv_addr(2031, true);
+    IPv4Address serv_addr(2032, true);
+    EventLoop loop;
 
-    TcpServer server(serv_addr, "DiscardServer");
+    TcpServer server(&loop, serv_addr, "DiscardServer");
     server.setMessageCallback(onMessage);
+    server.setConnectionCallback(onConnection);
     server.start();
+    loop.loop();
 }
 
 int main()
