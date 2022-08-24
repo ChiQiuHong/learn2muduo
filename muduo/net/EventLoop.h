@@ -22,6 +22,7 @@ namespace muduo
 
         class Channel;
         class EPoller;
+        class TimerQueue;
 
         ///
         /// Reactor, at most one per thread.
@@ -30,10 +31,23 @@ namespace muduo
         class EventLoop : noncopyable
         {
         public:
-            EventLoop();
-            ~EventLoop();
+            typedef std::function<void()> Functor;
 
+            EventLoop();
+            ~EventLoop();   // force out-line dtor, for std::uniqur_ptr members
+
+            ///
+            /// Loops forever.
+            ///
+            /// Must be called in the same thread as creation of the object.
+            /// 
             void loop();
+
+            /// Runs callback immediately in the loop thread.
+            /// It wakes up the loop, and run the cb.
+            /// If in the same loop thread, cb is run within the function.
+            /// Safe to call from other threads.
+            void runInLoop(Functor cb);
 
             void updateChannel(Channel* channel);
             // void removeChannel(Channel* channel);
@@ -60,6 +74,7 @@ namespace muduo
             bool looping_;  // atomic
             const pid_t threadId_;
             std::unique_ptr<EPoller> epoller_;
+            std::unique_ptr<TimerQueue> timerQueue_;
 
             ChannelList activeChannels_;    // 活跃的事件列表
             Channel* currentActiveChannel_; // 当前要处理的事件

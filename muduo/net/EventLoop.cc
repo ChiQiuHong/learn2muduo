@@ -3,6 +3,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/EPoller.h"
 #include "muduo/net/Channel.h"
+#include "muduo/net/TimerQueue.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -40,6 +41,12 @@ EventLoop::EventLoop()
     }
 }
 
+EventLoop::~EventLoop()
+{
+    assert(!looping_);
+    t_loopInThisThread = NULL;
+}
+
 void EventLoop::loop()
 {
     assert(!looping_);
@@ -64,10 +71,12 @@ void EventLoop::loop()
     looping_ = false;
 }
 
-EventLoop::~EventLoop()
+void EventLoop::runInLoop(Functor cb)
 {
-    assert(!looping_);
-    t_loopInThisThread = NULL;
+    if (isInLoopThread())
+    {
+        cb();
+    }
 }
 
 void EventLoop::updateChannel(Channel* channel)
