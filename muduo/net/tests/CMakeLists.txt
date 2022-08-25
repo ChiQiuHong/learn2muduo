@@ -4,8 +4,18 @@ target_link_libraries(address_unittest muduo_net boost_unit_test_framework)
 add_test(NAME address_unittest COMMAND address_unittest)
 endif()
 
+add_executable(eventloop_unittest EventLoop_unittest.cc)
+target_link_libraries(eventloop_unittest muduo_net)
+
+add_executable(eventloopthread_unittest EventLoopThread_unittest.cc)
+target_link_libraries(eventloopthread_unittest muduo_net)
+
 add_executable(socket_test Socket_test.cc)
 target_link_libraries(socket_test muduo_net)
 
 add_executable(tcpserver_test TcpServer_test.cc)
 target_link_libraries(tcpserver_test muduo_net)
+
+add_executable(timerqueue_unittest TimerQueue_unittest.cc)
+target_link_libraries(timerqueue_unittest muduo_net)
+add_test(NAME timerqueue_unittest COMMAND timerqueue_unittest)
