@@ -5,6 +5,7 @@ set(net_SRCS
     EPoller.cc
     EventLoop.cc
     EventLoopThread.cc
+    EventLoopThreadPool.cc
     Socket.cc
     TcpConnection.cc
     TcpServer.cc
@@ -23,6 +24,7 @@ set(HEADERS
     Channel.h
     EventLoop.h
     EventLoopThread.cc
+    EventLoopThreadPool.h
     TcpConnection.h
     TcpServer.h
     TimerId.h

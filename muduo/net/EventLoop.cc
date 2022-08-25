@@ -1,10 +1,12 @@
 #include "muduo/net/EventLoop.h"
 
 #include "muduo/base/Logging.h"
+#include "muduo/base/Mutex.h"
 #include "muduo/net/EPoller.h"
 #include "muduo/net/Channel.h"
 #include "muduo/net/TimerQueue.h"
 
+#include <algorithm>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
@@ -38,9 +40,11 @@ EventLoop* EventLoop::getEventLoopOfCurrentThread()
 EventLoop::EventLoop()
     : looping_(false),
       quit_(false),
+      eventHandling_(false),
       callingPendingFunctors_(false),
+      iteration_(0),
       threadId_(CurrentThread::tid()),
-      epoller_(new EPoller()),
+      epoller_(EPoller::newDefaultPoller(this)),
       timerQueue_(new TimerQueue(this)),
       wakeFd_(createEventfd()),
       wakeupChannel_(new Channel(this, wakeFd_)),
@@ -66,7 +70,11 @@ EventLoop::EventLoop()
 
 EventLoop::~EventLoop()
 {
-    assert(!looping_);
+    LOG_DEBUG << "EventLoop " << this << " of thread " << threadId_
+              << " destructs in thread " << CurrentThread::tid();
+    wakeupChannel_->disableAll();
+    wakeupChannel_->remove();
+    ::close(wakeFd_);
     t_loopInThisThread = NULL;
 }
 
@@ -82,16 +90,24 @@ void EventLoop::loop()
     {
         activeChannels_.clear();
         // 调用 EPoller::epoll()获取当前的活动事件，结果保存到activeChannels_数组里 超时时间 10s
-        epoller_->epoll(kEPollTimeMs, &activeChannels_);
-
+        epollReturnTime_ = epoller_->epoll(kEPollTimeMs, &activeChannels_);
+        ++iteration_;
+        if (Logger::logLevel() <= Logger::TRACE)
+        {
+            printActiveChannels();
+        }
+        // TODO sort channel by priority
+        eventHandling_ = true;
         for (Channel* channel : activeChannels_)
         {
             currentActiveChannel_ = channel;
-            currentActiveChannel_->handleEvent();
+            currentActiveChannel_->handleEvent(epollReturnTime_);
         }
         currentActiveChannel_ = NULL;
+        eventHandling_ = false;
         doPendingFunctors();
     }
+
     LOG_TRACE << "EventLoop " << this << " stop looping";
     looping_ = false;
 }
@@ -192,14 +208,20 @@ void EventLoop::updateChannel(Channel* channel)
 void EventLoop::removeChannel(Channel* channel)
 {
     assert(channel->ownerLoop() == this);
-    // TODO
+    assertInLoopThread();
+    if (eventHandling_)
+    {
+        assert(currentActiveChannel_ == channel ||
+            std::find(activeChannels_.begin(), activeChannels_.end(), channel) == activeChannels_.end());   
+    }
+    epoller_->removeChannel(channel);
 }
 
 bool EventLoop::hasChannel(Channel* channel)
 {
     assert(channel->ownerLoop() == this);
     assertInLoopThread();
-    return true; // FIXME
+    return epoller_->hasChannel(channel);
 }
 
 void EventLoop::abortNotInLoopThread()
@@ -235,4 +257,12 @@ void EventLoop::doPendingFunctors()
         functors[i]();
     }
     callingPendingFunctors_ = false;
+}
+
+void EventLoop::printActiveChannels() const
+{
+    for (const Channel* channel : activeChannels_)
+    {
+        LOG_TRACE << "{" << channel->reventsToString() << "} ";
+    }
 }

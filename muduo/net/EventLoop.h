@@ -10,7 +10,6 @@
 #include "muduo/net/Callbacks.h"
 #include "muduo/net/TimerId.h"
 
-using namespace std;
 using namespace std::chrono;
 
 ///
@@ -53,6 +52,13 @@ namespace muduo
             /// This is not 100% thread safe, if you call through a raw pointer,
             /// better to call through shared_ptr<EventLoop> for 100% safety.
             void quit();
+
+            ///
+            /// Time when epoll returns, usually means data arrival.
+            ///
+            system_clock::time_point epollReturnTime() const { return epollReturnTime_; }
+
+            int64_t iteration() const { return iteration_; }
 
             /// Runs callback immediately in the loop thread.
             /// It wakes up the loop, and run the cb.
@@ -104,6 +110,8 @@ namespace muduo
             }
 
             bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
+            // bool callingPendingFunctors() const { return callingPendingFunctors_; }
+            bool eventHandling() const { return eventHandling_; }
 
             static EventLoop *getEventLoopOfCurrentThread();
 
@@ -112,14 +120,17 @@ namespace muduo
             void handleRead();        // waked up 将eventfd里的内容读走，以便让其检测事件通知
             void doPendingFunctors(); // 执行转交给IO的任务
 
-            // void printActiveChannels() const;   // DEBUG 将发生的事件写入日志
+            void printActiveChannels() const;   // DEBUG 将发生的事件写入日志
 
             typedef std::vector<Channel *> ChannelList; // EventLoop 管理的事件分发器列表
 
             bool looping_; // atomic
             std::atomic<bool> quit_;
+            bool eventHandling_;
             bool callingPendingFunctors_; // atomic
+            int64_t iteration_;
             const pid_t threadId_;
+            system_clock::time_point epollReturnTime_;
             std::unique_ptr<EPoller> epoller_;
             std::unique_ptr<TimerQueue> timerQueue_; // 定时器列表
             int wakeFd_;                             // eventfd 描述符， 用于唤醒阻塞在 epoll 的 IO 线程

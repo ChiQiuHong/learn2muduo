@@ -1,9 +1,12 @@
 #pragma once
 
-#include "muduo/base/noncopyable.h"
+#include "muduo/net/EventLoop.h"
 
 #include <map>
 #include <vector>
+#include <chrono>
+
+using namespace std::chrono;
 
 struct epoll_event;
 
@@ -20,14 +23,22 @@ namespace muduo
         class EPoller : noncopyable
         {
         public:
-            typedef std::vector<Channel*> ChannelList;
+            typedef std::vector<Channel *> ChannelList;
 
-            EPoller();
+            EPoller(EventLoop *loop);
             ~EPoller();
 
-            void epoll(int timeoutMs, ChannelList* activeChannels);
+            system_clock::time_point epoll(int timeoutMs, ChannelList *activeChannels);
 
-            void updataChannel(Channel* channel);
+            void updataChannel(Channel *channel);
+            void removeChannel(Channel *channel);
+            bool hasChannel(Channel *channel) const;
+            static EPoller *newDefaultPoller(EventLoop *loop) { return new EPoller(loop); }
+
+            void assertInLoopThread() const
+            {
+                ownerLoop_->assertInLoopThread();
+            }
 
         private:
             typedef std::map<int, Channel *> ChannelMap;
@@ -35,13 +46,16 @@ namespace muduo
 
             static const int kInitEventListSize = 16;
 
+            static const char *operationToString(int op);
+
             void fillActiveChannels(int numEvents, ChannelList *activeChannels) const;
 
             void update(int operation, Channel *channel);
 
-            ChannelMap channels_; // 存储 channel 的 map
-            int epollfd_;         // epoll_create() 创建成功返回的文件描述符
-            EventList events_;    // 传递给 epoll_wait() 时 发生变化的文件描述符信息将被填入该数组
+            ChannelMap channels_;  // 存储 channel 的 map
+            EventLoop *ownerLoop_; // 调用方
+            int epollfd_;          // epoll_create() 创建成功返回的文件描述符
+            EventList events_;     // 传递给 epoll_wait() 时 发生变化的文件描述符信息将被填入该数组
         };
 
     } // namespace net

@@ -50,6 +50,15 @@ void DiscardServer() {
     close(clnt_sock);
 }
 
+/**
+ * @brief 使用muduo库的写法
+ */
+
 int main() {
-    DiscardServer();
+    LOG_INFO << "pid = " << getpid();
+    EventLoop loop;
+    IPv4Address listenAddr(2022);
+    DiscardServer server(&loop, listenAddr);
+    servet.start();
+    loop.loop();
 }
