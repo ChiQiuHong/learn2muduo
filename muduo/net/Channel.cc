@@ -48,18 +48,14 @@ void Channel::handleEvent(system_clock::time_point receiveTime)
     if (tied_)
     {
         guard = tie_.lock();
-        if (tied_)
-        {
-            guard = tie_.lock();
-            if (guard)
-            {
-                handleEventWithGuard(receiveTime);
-            }
-        }
-        else
+        if (guard)
         {
             handleEventWithGuard(receiveTime);
         }
+    }
+    else
+    {
+        handleEventWithGuard(receiveTime);
     }
 }
 

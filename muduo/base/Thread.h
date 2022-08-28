@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <pthread.h>
+#include <string>
 
 namespace muduo
 {

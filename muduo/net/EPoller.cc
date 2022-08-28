@@ -145,7 +145,7 @@ bool EPoller::hasChannel(Channel *channel) const
     return it != channels_.end() && it->second == channel;
 }
 
-const char *operationToString(int op)
+const char *EPoller::operationToString(int op)
 {
     switch (op)
     {
@@ -183,7 +183,8 @@ void EPoller::update(int operation, Channel *channel)
     // 通过将channel赋值给ptr，可以相互绑定，之后可以通过调用 events_[i].data.ptr来获取对应channel
     event.data.ptr = channel;
     int fd = channel->fd();
-    LOG_TRACE << "epoll_ctl";
+    LOG_TRACE << "epoll_ctl op = " << operationToString(operation)
+              << " fd = " << fd << " event = { " << channel->eventsToString() << " }";
 
     if (::epoll_ctl(epollfd_, operation, fd, &event) < 0)
     {

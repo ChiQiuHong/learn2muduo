@@ -2,6 +2,7 @@
 
 #include "muduo/base/noncopyable.h"
 #include "muduo/net/Address.h"
+#include "muduo/net/Buffer.h"
 #include "muduo/net/Callbacks.h"
 
 #include <memory>

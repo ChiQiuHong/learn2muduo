@@ -1,6 +1,7 @@
 set(net_SRCS
     Acceptor.cc
     Address.cc
+    Buffer.cc
     Channel.cc
     EPoller.cc
     EventLoop.cc
@@ -20,6 +21,7 @@ install(TARGETS muduo_net DESTINATION lib)
 
 set(HEADERS
     Address.h
+    Buffer.h
     Callbacks.h
     Channel.h
     EventLoop.h

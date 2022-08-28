@@ -1,5 +1,7 @@
 #include "muduo/net/EventLoop.h"
+#include "muduo/net/EventLoopThread.h"
 #include "muduo/base/Thread.h"
+#include "muduo/base/Logging.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -70,5 +72,13 @@ int main()
 
         loop.loop();
         print("main loop exits");
+    }
+    sleep(1);
+    {
+        EventLoopThread loopThread;
+        EventLoop* loop = loopThread.startLoop();
+        loop->runAfter(2, printTid);
+        sleep(3);
+        print("thread loop exits");
     }
 }

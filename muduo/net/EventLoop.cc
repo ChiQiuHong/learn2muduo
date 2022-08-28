@@ -46,8 +46,8 @@ EventLoop::EventLoop()
       threadId_(CurrentThread::tid()),
       epoller_(EPoller::newDefaultPoller(this)),
       timerQueue_(new TimerQueue(this)),
-      wakeFd_(createEventfd()),
-      wakeupChannel_(new Channel(this, wakeFd_)),
+      wakeupFd_(createEventfd()),
+      wakeupChannel_(new Channel(this, wakeupFd_)),
       currentActiveChannel_(NULL)
 {
     LOG_TRACE << "EventLoop created " << this << " in thread " << threadId_;
@@ -74,7 +74,7 @@ EventLoop::~EventLoop()
               << " destructs in thread " << CurrentThread::tid();
     wakeupChannel_->disableAll();
     wakeupChannel_->remove();
-    ::close(wakeFd_);
+    ::close(wakeupFd_);
     t_loopInThisThread = NULL;
 }
 
@@ -129,10 +129,12 @@ void EventLoop::runInLoop(Functor cb)
     if (isInLoopThread())
     {
         cb();
+        LOG_TRACE << "Run in Loop";
     }
     else
     {
         // 如果不在 IO 线程里，就先放入到任务队列中
+        LOG_TRACE << "Run in queueInLoop";
         queueInLoop(std::move(cb));
     }
 }
@@ -191,7 +193,7 @@ void EventLoop::wakeup()
 {
     // 通过往eventfd写标志通知，让阻塞poll立马返回并执行回调函数
     uint64_t one = 1;
-    ssize_t n = ::write(wakeFd_, &one, sizeof(one));
+    ssize_t n = ::write(wakeupFd_, &one, sizeof(one));
     if (n != sizeof(one))
     {
         LOG_ERROR << "EventLoop::wakeup() writes " << n << "bytes instead of 8";
@@ -234,7 +236,7 @@ void EventLoop::abortNotInLoopThread()
 void EventLoop::handleRead()
 {
     uint64_t one = 1;
-    ssize_t n = ::read(wakeFd_, &one, sizeof(one));
+    ssize_t n = ::read(wakeupFd_, &one, sizeof(one));
     if (n != sizeof(one))
     {
         LOG_ERROR << "EventLoop::handleRead() reads " << n << "bytes instead of 8";
@@ -252,9 +254,9 @@ void EventLoop::doPendingFunctors()
         functors.swap(pendingFunctors_);
     }
 
-    for (size_t i = 0; i < functors.size(); ++i)
+    for (const Functor& functor : functors)
     {
-        functors[i]();
+        functor();
     }
     callingPendingFunctors_ = false;
 }

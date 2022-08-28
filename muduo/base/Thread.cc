@@ -12,6 +12,7 @@
 #include <linux/unistd.h>
 #include <assert.h>
 #include <exception>
+#include <stdlib.h>
 
 #include <thread>
 

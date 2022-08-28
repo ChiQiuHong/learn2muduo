@@ -1,4 +1,11 @@
+add_executable(channel_test Channel_test.cc)
+target_link_libraries(channel_test muduo_net)
+
 if(BOOSTTEST_LIBRARY)
+add_executable(buffer_unittest Buffer_unittest.cc)
+target_link_libraries(buffer_unittest muduo_net boost_unit_test_framework)
+add_test(NAME buffer_unittest COMMAND buffer_unittest)
+
 add_executable(address_unittest Address_unittest.cc)
 target_link_libraries(address_unittest muduo_net boost_unit_test_framework)
 add_test(NAME address_unittest COMMAND address_unittest)

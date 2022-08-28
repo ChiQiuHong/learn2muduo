@@ -15,17 +15,19 @@ void onConnection(const TcpConnectionPtr& conn)
              << (conn->connected() ? "UP" : "DOWN");
 }
 
-void onMessage(const TcpConnectionPtr &conn)
+void onMessage(const TcpConnectionPtr &conn,
+               Buffer* buf,
+               system_clock::time_point time)
 {
-    char message[1024];
-    ::read(conn->fd(), message, sizeof(message) - 1);
-    printf("Message from client: %s: %s \n", conn->peerAddress().toIpPort().c_str(), message);
+    std::string msg(buf->retrieveAllAsString());
+    LOG_INFO << conn->name() << " discards " << msg.size()
+             << " bytes reveived at ";
 }
 
 void DiscardServer()
 {
 
-    IPv4Address serv_addr(2032, true);
+    IPv4Address serv_addr(2035, true);
     EventLoop loop;
 
     TcpServer server(&loop, serv_addr, "DiscardServer");
@@ -36,6 +38,6 @@ void DiscardServer()
 }
 
 int main()
-{
+{    
     DiscardServer();
 }

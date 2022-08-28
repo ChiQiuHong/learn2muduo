@@ -2,6 +2,8 @@
 
 #include "muduo/base/Logging.h"
 
+#include <string>
+
 using namespace muduo;
 using namespace muduo::net;
 
@@ -28,8 +30,10 @@ void DiscardServer::onConnection(const TcpConnectionPtr& conn)
 }
 
 void DiscardServer::onMessage(const TcpConnectionPtr& conn,
-                              system_clock::timepoint time)
+                              Buffer* buf,
+                              system_clock::time_point time)
 {
+    std::string msg(buf->retrieveAllAsString());
     LOG_INFO << conn->name() << " discards " << msg.size()
-             << " bytes received at " << ;
+             << " bytes received at ";
 }

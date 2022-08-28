@@ -29,9 +29,9 @@ Acceptor::Acceptor(EventLoop* loop, const IPv4Address &listenAddr, bool reusepor
 
 Acceptor::~Acceptor()
 {
-    // TODO 连接关闭 要关闭channel 移除注册的epoll
-    // acceptChannel_.disableAll();
-    // acceptChannel_.remove();
+    // 连接关闭 要关闭channel 移除注册的epoll
+    acceptChannel_.disableAll();
+    acceptChannel_.remove();
     // ::close(idleFd_);
 }
 
@@ -48,7 +48,7 @@ void Acceptor::handleRead()
 {
     loop_->assertInLoopThread();
     IPv4Address peeraddr;
-
+    // FIXME loop until no more
     int connfd = acceptSocket_.accept(&peeraddr);
     if (connfd >= 0)
     {

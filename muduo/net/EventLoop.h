@@ -126,14 +126,14 @@ namespace muduo
 
             bool looping_; // atomic
             std::atomic<bool> quit_;
-            bool eventHandling_;
+            bool eventHandling_; // atomic
             bool callingPendingFunctors_; // atomic
             int64_t iteration_;
             const pid_t threadId_;
             system_clock::time_point epollReturnTime_;
             std::unique_ptr<EPoller> epoller_;
             std::unique_ptr<TimerQueue> timerQueue_; // 定时器列表
-            int wakeFd_;                             // eventfd 描述符， 用于唤醒阻塞在 epoll 的 IO 线程
+            int wakeupFd_;                             // eventfd 描述符， 用于唤醒阻塞在 epoll 的 IO 线程
             // unlike in TimerQueue, which is an internal class,
             // we don't expose Channel to client.
             std::unique_ptr<Channel> wakeupChannel_; // eventfd 对应的 Channel
